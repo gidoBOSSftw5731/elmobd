@@ -193,8 +193,8 @@ type Device struct {
 
 // NewDevice constructs a Device by initilizing the serial connection and
 // setting the protocol to talk with the car to "automatic".
-func NewDevice(devicePath string, debug bool) (*Device, error) {
-	rawDev, err := NewRealDevice(devicePath)
+func NewDevice(devicePath string, linefeed, debug bool) (*Device, error) {
+	rawDev, err := NewRealDevice(devicePath, linefeed)
 
 	if err != nil {
 		return nil, err
