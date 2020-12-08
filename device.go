@@ -310,21 +310,25 @@ func (dev *Device) RunOBDCommand(cmd OBDCommand) (OBDCommand, error) {
 	result, err := parseOBDResponse(cmd, rawRes.GetOutputs())
 
 	if err != nil {
+		cmd.SetStatus(Failure)
 		return cmd, err
-	} else {
-		if result == nil {
-			return cmd, nil
-		}
 	}
 
 	err = result.Validate(cmd)
 
 	if err != nil {
+		cmd.SetStatus(Failure)
 		return cmd, err
 	}
 
 	err = cmd.SetValue(result)
 
+	if err != nil {
+		cmd.SetStatus(Failure)
+		return cmd, err
+	}
+
+	cmd.SetStatus(Success)
 	return cmd, err
 }
 
