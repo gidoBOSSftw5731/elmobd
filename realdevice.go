@@ -241,6 +241,17 @@ out:
 	return &result
 }
 
+// Close closes real device.
+func (dev *RealDevice) Close() error {
+	if err := dev.serialPort.Flush(); err != nil {
+		return fmt.Errorf("Could not flush serial device: %s", err.Error())
+	}
+	if err := dev.serialPort.Close(); err != nil {
+		return fmt.Errorf("Could not close serial device: %s", err.Error())
+	}
+	return nil
+}
+
 /*==============================================================================
  * Internal
  */

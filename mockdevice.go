@@ -68,6 +68,11 @@ func (dev *MockDevice) RunCommand(command string) RawResult {
 	}
 }
 
+// Close closes mock device
+func (dev *MockDevice) Close() error {
+	return nil
+}
+
 /*==============================================================================
  * Internal
  */
