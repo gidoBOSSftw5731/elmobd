@@ -162,7 +162,7 @@ func TestIsSupportedWikipediaExample(t *testing.T) {
 
 	for _, pid := range supported {
 		cmd := &DummyCommand{
-			baseCommand{SERVICE_01_ID, pid, 1, "dummy"},
+			baseCommand{SERVICE_01_ID, pid, 1, "dummy", Ready},
 		}
 
 		assertEqual(t, sc.IsSupported(cmd), true)
@@ -170,7 +170,7 @@ func TestIsSupportedWikipediaExample(t *testing.T) {
 
 	for _, pid := range unsupported {
 		cmd := &DummyCommand{
-			baseCommand{SERVICE_01_ID, pid, 1, "dummy"},
+			baseCommand{SERVICE_01_ID, pid, 1, "dummy", Ready},
 		}
 
 		assertEqual(t, sc.IsSupported(cmd), false)
@@ -277,7 +277,7 @@ func TestIssue27Regression(t *testing.T) {
 
 	for _, pid := range supported {
 		cmd := &DummyCommand{
-			baseCommand{SERVICE_01_ID, pid, 1, "dummy"},
+			baseCommand{SERVICE_01_ID, pid, 1, "dummy", Ready},
 		}
 
 		assertEqual(t, sc.IsSupported(cmd), true)
