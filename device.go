@@ -181,6 +181,7 @@ type RawResult interface {
 // implementation or a mock implementation used for testing.
 type RawDevice interface {
 	RunCommand(string) RawResult
+	Close() error
 }
 
 // Device represents the connection to a ELM327 device. This is the data type
@@ -189,6 +190,11 @@ type RawDevice interface {
 type Device struct {
 	rawDevice   RawDevice
 	outputDebug bool
+}
+
+// Close closes underlying raw device.
+func (dev *Device) Close() error {
+	return dev.rawDevice.Close()
 }
 
 // NewDevice constructs a Device by initilizing the serial connection and
