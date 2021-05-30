@@ -78,62 +78,90 @@ func (dev *MockDevice) Close() error {
  */
 
 func mockMode1Outputs(subcmd string) []string {
-	if strings.HasPrefix(subcmd, "00") {
+
+	if len(subcmd) < 2 {
+		return []string{"NOT SUPPORTED"}
+	}
+
+	// First 2 charaters signify the type of command
+	switch strings.ToUpper(subcmd[:2]) {
+	case "00":
 		// PIDs supported part 1
 		return []string{
 			"41 00 0C 10 00 00", // Means PIDs supported: 05, 06, 0C
 		}
-	} else if strings.HasPrefix(subcmd, "20") {
-		// PIDs supported part 2
+	case "20": // PIDs supported part 2
 		return []string{
 			"41 20 00 00 00 00",
 		}
-	} else if strings.HasPrefix(subcmd, "40") {
-		// PIDs supported part 3
+	case "40": // PIDs supported part 3
 		return []string{
 			"41 40 00 00 00 00",
 		}
-	} else if strings.HasPrefix(subcmd, "60") {
-		// PIDs supported part 4
+	case "60": // PIDs supported part 4
 		return []string{
 			"41 60 00 00 00 00",
 		}
-	} else if strings.HasPrefix(subcmd, "80") {
-		// PIDs supported part 5
+	case "80": // PIDs supported part 5
 		return []string{
 			"41 80 00 00 00 00",
 		}
-	} else if strings.HasPrefix(subcmd, "01") {
+	case "01":
 		return []string{
 			"41 01 FF 00 00 00",
 		}
-	} else if strings.HasPrefix(subcmd, "05") {
+	//Coolant Temp
+	case "05":
 		return []string{
 			"41 05 4F",
 		}
-	} else if strings.HasPrefix(subcmd, "06") {
+	case "06":
 		return []string{
 			"41 06 02",
 		}
-	} else if strings.HasPrefix(subcmd, "0C") {
+	//Engine RPM
+	case "0C":
 		return []string{
 			"41 0C 03 00",
 		}
-	} else if strings.HasPrefix(subcmd, "2F") {
+	//Fuel Level
+	case "2F":
 		return []string{
 			"41 2F 6B",
 		}
-	} else if strings.HasPrefix(subcmd, "0D") {
+	case "OD":
 		return []string{
 			"41 0D 4B",
 		}
-	} else if strings.HasPrefix(subcmd, "31") {
+	case "31":
 		return []string{
 			"41 31 02 0C",
 		}
+	//Engine Load
+	case "04":
+		return []string{
+			"41 04 50",
+		}
+	//Fuel Pressure
+	case "0A":
+		return []string{
+			"41 0A 50",
+		}
+	//Speed (km/h)
+	case "0D":
+		return []string{
+			"41 0D 0F",
+		}
+	//Intake Air temp
+	case "0F":
+		return []string{
+			"41 0F 3C",
+		}
 	}
 
+	//default case
 	return []string{"NOT SUPPORTED"}
+
 }
 
 func mockOutputs(cmd string) []string {
