@@ -68,6 +68,7 @@ type RealDevice struct {
 	input      string
 	outputs    []string
 	serialPort *serial.Port
+	enableLF   bool
 }
 
 // NewRealDevice creates a new low-level ELM327 device manager by connecting to
@@ -77,7 +78,7 @@ type RealDevice struct {
 // 800 ms blocking wait will occur. This makes sure the device does not have
 // any custom settings that could make this library handle the device
 // incorrectly.
-func NewRealDevice(devicePath string) (*RealDevice, error) {
+func NewRealDevice(devicePath string, enableLF bool) (*RealDevice, error) {
 	config := &serial.Config{
 		Name:        devicePath,
 		Baud:        38400,
@@ -97,6 +98,7 @@ func NewRealDevice(devicePath string) (*RealDevice, error) {
 		state:      deviceReady,
 		mutex:      sync.Mutex{},
 		serialPort: port,
+		enableLF:   enableLF,
 	}
 
 	err = dev.Reset()
@@ -114,6 +116,7 @@ func NewRealDevice(devicePath string) (*RealDevice, error) {
 // In case this doesn't work, you should turn off/on the device.
 func (dev *RealDevice) Reset() error {
 	var err error
+	var linefeedCmd string
 
 	dev.mutex.Lock()
 	dev.state = deviceBusy
@@ -146,6 +149,19 @@ func (dev *RealDevice) Reset() error {
 			"Device did not identify itself as ELM327: %s",
 			output,
 		)
+	}
+
+	linefeedCmd = "ATL0"
+	if dev.enableLF {
+		linefeedCmd = "ATL1"
+	}
+	_, err = dev.write(linefeedCmd)
+	if err != nil {
+		goto out
+	}
+	err = dev.read()
+	if err != nil {
+		goto out
 	}
 out:
 	if err != nil {
@@ -225,6 +241,17 @@ out:
 	return &result
 }
 
+// Close closes real device.
+func (dev *RealDevice) Close() error {
+	if err := dev.serialPort.Flush(); err != nil {
+		return fmt.Errorf("Could not flush serial device: %s", err.Error())
+	}
+	if err := dev.serialPort.Close(); err != nil {
+		return fmt.Errorf("Could not close serial device: %s", err.Error())
+	}
+	return nil
+}
+
 /*==============================================================================
  * Internal
  */
@@ -241,7 +268,7 @@ func (dev *RealDevice) write(input string) (int, error) {
 	dev.input = ""
 
 	n, err := dev.serialPort.Write(
-		[]byte(input + "\r\n"),
+		[]byte(input + dev.linefeed()),
 	)
 
 	if err == nil {
@@ -281,7 +308,7 @@ func (dev *RealDevice) read() error {
 func (dev *RealDevice) processResult(result bytes.Buffer) error {
 	parts := strings.Split(
 		string(result.Bytes()),
-		"\r",
+		dev.linefeed(),
 	)
 
 	if parts[0] != dev.input {
@@ -297,7 +324,7 @@ func (dev *RealDevice) processResult(result bytes.Buffer) error {
 	var trimmedParts []string
 
 	for p := range parts {
-		tmp := strings.Trim(parts[p], "\r ")
+		tmp := strings.TrimSpace(parts[p])
 
 		if tmp == "" {
 			continue
@@ -313,4 +340,12 @@ func (dev *RealDevice) processResult(result bytes.Buffer) error {
 	dev.outputs = trimmedParts
 
 	return nil
+}
+
+func (dev *RealDevice) linefeed() string {
+	linefeed := "\r"
+	if dev.enableLF {
+		linefeed = linefeed + "\n"
+	}
+	return linefeed
 }

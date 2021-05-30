@@ -181,6 +181,7 @@ type RawResult interface {
 // implementation or a mock implementation used for testing.
 type RawDevice interface {
 	RunCommand(string) RawResult
+	Close() error
 }
 
 // Device represents the connection to a ELM327 device. This is the data type
@@ -191,10 +192,15 @@ type Device struct {
 	outputDebug bool
 }
 
+// Close closes underlying raw device.
+func (dev *Device) Close() error {
+	return dev.rawDevice.Close()
+}
+
 // NewDevice constructs a Device by initilizing the serial connection and
 // setting the protocol to talk with the car to "automatic".
-func NewDevice(devicePath string, debug bool) (*Device, error) {
-	rawDev, err := NewRealDevice(devicePath)
+func NewDevice(devicePath string, linefeed, debug bool) (*Device, error) {
+	rawDev, err := NewRealDevice(devicePath, linefeed)
 
 	if err != nil {
 		return nil, err
@@ -310,21 +316,25 @@ func (dev *Device) RunOBDCommand(cmd OBDCommand) (OBDCommand, error) {
 	result, err := parseOBDResponse(cmd, rawRes.GetOutputs())
 
 	if err != nil {
+		cmd.SetStatus(Failure)
 		return cmd, err
-	} else {
-		if result == nil {
-			return cmd, nil
-		}
 	}
 
 	err = result.Validate(cmd)
 
 	if err != nil {
+		cmd.SetStatus(Failure)
 		return cmd, err
 	}
 
 	err = cmd.SetValue(result)
 
+	if err != nil {
+		cmd.SetStatus(Failure)
+		return cmd, err
+	}
+
+	cmd.SetStatus(Success)
 	return cmd, err
 }
 

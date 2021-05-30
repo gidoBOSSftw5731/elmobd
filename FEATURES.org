@@ -72,21 +72,21 @@ Feature: Check trouble codes amount
   I want to check if there are trouble codes set
 #+END_SRC
 
-* Wishlist
 ** F8
-
-#+BEGIN_SRC feature :tangle ./features/get_trouble_codes.feature :mkdirp yes
-Feature: Get trouble codes
-  In order to understand what is wrong with my car
-  As a developer
-  I want to get trouble codes from my car
-#+END_SRC
-
-** F9
 
 #+BEGIN_SRC feature :tangle ./features/clear_trouble_codes.feature :mkdirp yes
 Feature: Clear trouble codes
   In order to turn off the malfunction indicator lamp
   As a developer
   I want to clear all trouble codes and stores values
+#+END_SRC
+
+* Wishlist
+** F9
+
+#+BEGIN_SRC feature :tangle ./features/get_trouble_codes.feature :mkdirp yes
+Feature: Get trouble codes
+  In order to understand what is wrong with my car
+  As a developer
+  I want to get trouble codes from my car
 #+END_SRC

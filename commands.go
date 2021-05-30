@@ -15,6 +15,20 @@ const SERVICE_04_ID = 0x04
 // OBDParameterID is an alias to give meaning to this particular byte.
 type OBDParameterID byte
 
+// OBDCommandStatus is an enumeration of statuses for OBD commands.
+type OBDCommandStatus int
+
+const (
+	// Ready means the command is ready to be run by the device.
+	Ready OBDCommandStatus = iota
+
+	// Success means the command has been ran and result has been successfully validated.
+	Success
+
+	// Failure means the command has been ran and and error happened.
+	Failure
+)
+
 // OBDCommand is an interface that all OBD commands needs to implement to be
 // able to be used with the Device.
 type OBDCommand interface {
@@ -25,6 +39,8 @@ type OBDCommand interface {
 	SetValue(*Result) error
 	ValueAsLit() string
 	ToCommand() string
+	GetStatus() OBDCommandStatus
+	SetStatus(OBDCommandStatus)
 }
 
 // baseCommand is a simple struct with the 3 members that all OBDCommands
@@ -34,6 +50,7 @@ type baseCommand struct {
 	parameterID OBDParameterID
 	dataWidth   byte
 	key         string
+	status      OBDCommandStatus
 }
 
 // ResultLessCommand is a command implementing empty functions for setting values (commands without results)
@@ -76,6 +93,14 @@ func (cmd *baseCommand) ToCommand() string {
 		cmd.ParameterID(),
 		byte(math.Ceil(dataLines)),
 	)
+}
+
+func (cmd *baseCommand) GetStatus() OBDCommandStatus {
+	return cmd.status
+}
+
+func (cmd *baseCommand) SetStatus(status OBDCommandStatus) {
+	cmd.status = status
 }
 
 // FloatCommand is just a shortcut for commands that retrieve floating point
@@ -153,7 +178,7 @@ func NewPartSupported(index byte) *PartSupported {
 	pid := OBDParameterID((index - 1) * PartRange)
 
 	return &PartSupported{
-		baseCommand{SERVICE_01_ID, pid, 4, fmt.Sprintf("supported_commands_part%d", index)},
+		baseCommand{SERVICE_01_ID, pid, 4, fmt.Sprintf("supported_commands_part%d", index), Ready},
 		UIntCommand{},
 		index,
 	}
@@ -305,7 +330,7 @@ func (cmd *MonitorStatus) ValueAsLit() string {
 // NewMonitorStatus creates a new MonitorStatus.
 func NewMonitorStatus() *MonitorStatus {
 	return &MonitorStatus{
-		baseCommand{SERVICE_01_ID, 1, 4, "monitor_status"},
+		baseCommand{SERVICE_01_ID, 1, 4, "monitor_status", Ready},
 		false,
 		0,
 	}
@@ -344,7 +369,7 @@ type EngineLoad struct {
 // NewEngineLoad creates a new EngineLoad with the correct parameters.
 func NewEngineLoad() *EngineLoad {
 	return &EngineLoad{
-		baseCommand{SERVICE_01_ID, 4, 1, "engine_load"},
+		baseCommand{SERVICE_01_ID, 4, 1, "engine_load", Ready},
 		FloatCommand{},
 	}
 }
@@ -374,7 +399,7 @@ type Fuel struct {
 // NewFuel creates a new Fuel with the correct parameters.
 func NewFuel() *Fuel {
 	return &Fuel{
-		baseCommand{SERVICE_01_ID, 0x2f, 1, "fuel"},
+		baseCommand{SERVICE_01_ID, 0x2f, 1, "fuel", Ready},
 		FloatCommand{},
 	}
 }
@@ -404,7 +429,7 @@ type DistSinceDTCClear struct {
 // NewDistSinceDTCClear creates a new commend distance since DTC clear with the correct parameters.
 func NewDistSinceDTCClear() *DistSinceDTCClear {
 	return &DistSinceDTCClear{
-		baseCommand{SERVICE_01_ID, 0x31, 2, "dist_since_dtc_clean"},
+		baseCommand{SERVICE_01_ID, 0x31, 2, "dist_since_dtc_clean", Ready},
 		UIntCommand{},
 	}
 }
@@ -436,7 +461,7 @@ type CoolantTemperature struct {
 // parameters.
 func NewCoolantTemperature() *CoolantTemperature {
 	return &CoolantTemperature{
-		baseCommand{SERVICE_01_ID, 5, 1, "coolant_temperature"},
+		baseCommand{SERVICE_01_ID, 5, 1, "coolant_temperature", Ready},
 		IntCommand{},
 	}
 }
@@ -485,7 +510,7 @@ type ShortFuelTrim1 struct {
 func NewShortFuelTrim1() *ShortFuelTrim1 {
 	return &ShortFuelTrim1{
 		fuelTrim{
-			baseCommand{SERVICE_01_ID, 6, 1, "short_term_fuel_trim_bank1"},
+			baseCommand{SERVICE_01_ID, 6, 1, "short_term_fuel_trim_bank1", Ready},
 			FloatCommand{},
 		},
 	}
@@ -501,7 +526,7 @@ type LongFuelTrim1 struct {
 func NewLongFuelTrim1() *LongFuelTrim1 {
 	return &LongFuelTrim1{
 		fuelTrim{
-			baseCommand{SERVICE_01_ID, 7, 1, "long_term_fuel_trim_bank1"},
+			baseCommand{SERVICE_01_ID, 7, 1, "long_term_fuel_trim_bank1", Ready},
 			FloatCommand{},
 		},
 	}
@@ -517,7 +542,7 @@ type ShortFuelTrim2 struct {
 func NewShortFuelTrim2() *ShortFuelTrim2 {
 	return &ShortFuelTrim2{
 		fuelTrim{
-			baseCommand{SERVICE_01_ID, 8, 1, "short_term_fuel_trim_bank2"},
+			baseCommand{SERVICE_01_ID, 8, 1, "short_term_fuel_trim_bank2", Ready},
 			FloatCommand{},
 		},
 	}
@@ -533,7 +558,7 @@ type LongFuelTrim2 struct {
 func NewLongFuelTrim2() *LongFuelTrim2 {
 	return &LongFuelTrim2{
 		fuelTrim{
-			baseCommand{SERVICE_01_ID, 9, 1, "long_term_fuel_trim_bank2"},
+			baseCommand{SERVICE_01_ID, 9, 1, "long_term_fuel_trim_bank2", Ready},
 			FloatCommand{},
 		},
 	}
@@ -551,7 +576,7 @@ type FuelPressure struct {
 // NewFuelPressure creates a new FuelPressure with the right parameters.
 func NewFuelPressure() *FuelPressure {
 	return &FuelPressure{
-		baseCommand{SERVICE_01_ID, 10, 1, "fuel_pressure"},
+		baseCommand{SERVICE_01_ID, 10, 1, "fuel_pressure", Ready},
 		UIntCommand{},
 	}
 }
@@ -583,7 +608,7 @@ type IntakeManifoldPressure struct {
 // right parameters.
 func NewIntakeManifoldPressure() *IntakeManifoldPressure {
 	return &IntakeManifoldPressure{
-		baseCommand{SERVICE_01_ID, 11, 1, "intake_manifold_pressure"},
+		baseCommand{SERVICE_01_ID, 11, 1, "intake_manifold_pressure", Ready},
 		UIntCommand{},
 	}
 }
@@ -613,7 +638,7 @@ type EngineRPM struct {
 // NewEngineRPM creates a new EngineRPM with the right parameters.
 func NewEngineRPM() *EngineRPM {
 	return &EngineRPM{
-		baseCommand{SERVICE_01_ID, 12, 2, "engine_rpm"},
+		baseCommand{SERVICE_01_ID, 12, 2, "engine_rpm", Ready},
 		FloatCommand{},
 	}
 }
@@ -643,7 +668,7 @@ type VehicleSpeed struct {
 // NewVehicleSpeed creates a new VehicleSpeed with the right parameters
 func NewVehicleSpeed() *VehicleSpeed {
 	return &VehicleSpeed{
-		baseCommand{SERVICE_01_ID, 13, 1, "vehicle_speed"},
+		baseCommand{SERVICE_01_ID, 13, 1, "vehicle_speed", Ready},
 		UIntCommand{},
 	}
 }
@@ -677,7 +702,7 @@ type TimingAdvance struct {
 // NewTimingAdvance creates a new TimingAdvance with the right parameters.
 func NewTimingAdvance() *TimingAdvance {
 	return &TimingAdvance{
-		baseCommand{SERVICE_01_ID, 14, 1, "timing_advance"},
+		baseCommand{SERVICE_01_ID, 14, 1, "timing_advance", Ready},
 		FloatCommand{},
 	}
 }
@@ -708,7 +733,7 @@ type IntakeAirTemperature struct {
 // NewIntakeAirTemperature creates a new IntakeAirTemperature with the right parameters.
 func NewIntakeAirTemperature() *IntakeAirTemperature {
 	return &IntakeAirTemperature{
-		baseCommand{SERVICE_01_ID, 15, 1, "intake_air_temperature"},
+		baseCommand{SERVICE_01_ID, 15, 1, "intake_air_temperature", Ready},
 		IntCommand{},
 	}
 }
@@ -742,7 +767,7 @@ type MafAirFlowRate struct {
 // NewMafAirFlowRate creates a new MafAirFlowRate with the right parameters.
 func NewMafAirFlowRate() *MafAirFlowRate {
 	return &MafAirFlowRate{
-		baseCommand{SERVICE_01_ID, 16, 2, "maf_air_flow_rate"},
+		baseCommand{SERVICE_01_ID, 16, 2, "maf_air_flow_rate", Ready},
 		FloatCommand{},
 	}
 }
@@ -773,7 +798,7 @@ type ThrottlePosition struct {
 // NewThrottlePosition creates a new ThrottlePosition with the right parameters.
 func NewThrottlePosition() *ThrottlePosition {
 	return &ThrottlePosition{
-		baseCommand{SERVICE_01_ID, 17, 1, "throttle_position"},
+		baseCommand{SERVICE_01_ID, 17, 1, "throttle_position", Ready},
 		FloatCommand{},
 	}
 }
@@ -837,7 +862,7 @@ type OBDStandards struct {
 // NewOBDStandards creates a new OBDStandards with the right parameters.
 func NewOBDStandards() *OBDStandards {
 	return &OBDStandards{
-		baseCommand{SERVICE_01_ID, 28, 1, "obd_standards"},
+		baseCommand{SERVICE_01_ID, 28, 1, "obd_standards", Ready},
 		UIntCommand{},
 	}
 }
@@ -870,7 +895,7 @@ type RuntimeSinceStart struct {
 // parameters.
 func NewRuntimeSinceStart() *RuntimeSinceStart {
 	return &RuntimeSinceStart{
-		baseCommand{SERVICE_01_ID, 31, 1, "runtime_since_engine_start"},
+		baseCommand{SERVICE_01_ID, 31, 1, "runtime_since_engine_start", Ready},
 		UIntCommand{},
 	}
 }
@@ -904,7 +929,7 @@ func (cmd *ResultLessCommand) ValueAsLit() string {
 // NewClearTroubleCodes creates a new ClearTroubleCodes with the right parameters..
 func NewClearTroubleCodes() *ClearTroubleCodes {
 	return &ClearTroubleCodes{
-		baseCommand{SERVICE_04_ID, 0, 0, "clear_trouble_codes"},
+		baseCommand{SERVICE_04_ID, 0, 0, "clear_trouble_codes", Ready},
 		ResultLessCommand{},
 	}
 }
