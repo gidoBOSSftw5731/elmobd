@@ -329,7 +329,7 @@ func (dev *Device) RunOBDCommand(cmd OBDCommand) (OBDCommand, error) {
 }
 
 // RunManyOBDCommands is a helper function to run multiple commands in series.
-func (dev *Device) RunManyOBDCommands(commands []OBDCommand) ([]OBDCommand, error) {
+func (dev *Device) RunManyOBDCommands(commands ...OBDCommand) ([]OBDCommand, error) {
 	var result []OBDCommand
 
 	for _, cmd := range commands {
