@@ -312,11 +312,11 @@ func (dev *RealDevice) processResult(result bytes.Buffer) error {
 	)
 
 	if parts[0] != dev.input {
-		return fmt.Errorf(
-			"Write echo mismatch: %q not suffix of %q",
-			dev.input,
-			parts[0],
-		)
+//		return fmt.Errorf(
+//			"Write echo mismatch: %q not suffix of %q",
+//			dev.input,
+//			parts[0],
+//		)
 	}
 
 	parts = parts[1:]
